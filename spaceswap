@@ -1,0 +1,61 @@
+
+
+- name: creteing swap space on ec2 instance
+  command: dd if=/dev/zero of={{ swap_file_path }} bs={{ swap_bs_size_mb }} count={{ swap_file_size }}
+           creates="{{ swap_file_path }}"
+		   
+#sudo dd if=/dev/zero of=/swapfile bs=128M count=4		   
+
+- name: Change swap file permissions
+  file: path="{{ swap_file_path }}"
+        owner=root
+        group=root
+        mode=0600
+
+#sudo chmod 600 /swapfile
+
+
+- name: Make swap file
+  command: "sudo mkswap {{ swap_file_path }}"
+  when: swapfile.stdout.find('swap file') == -1
+
+#sudo mkswap /swapfile
+
+- name: Make swapon file
+  command: "sudo swapon {{ swap_file_path }}"
+  
+#sudo swapon /swapfile
+
+- name: Turn on swap
+  command: swapon -a
+
+#swapon -a making all available & Devices that are already being used as swap are silently skipped.
+ 
+- name: Verify that the procedure was successful
+  command: swapon -s
+  
+# sudo swapon -s ( s summary) 
+
+- name: Write swap entry in fstab
+  mount: name=none
+         src={{ swap_file_path }}
+         fstype=swap
+         opts=sw
+         passno=0
+         dump=0
+         state=present
+
+#Start the swap file at boot time by editing the /etc/fstab file.
+#sudo vi /etc/fstab
+#/swapfile swap swap defaults 0 0
+
+#- name: Mount swap
+#  command: "swapon {{ swap_file_path }}"
+#  when: ansible_swaptotal_mb < 1
+
+
+
+#swap_file_path: /swapfile
+#swap_bs_size_mb: 128M
+#swap_file_size: 4
+
